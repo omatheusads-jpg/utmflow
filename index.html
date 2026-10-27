@@ -1,0 +1,1996 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UtmFlow — Plataforma de Tracking, Lucro Real & Meta Ads</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        meta: '#1877F2',
+                        flowDark: '#0B0F19',
+                        flowCard: '#111827',
+                        flowBorder: '#1F2937',
+                        emeraldNeon: '#10B981'
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Smooth custom scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0B0F19; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4B5563; }
+        .drag-ghost { opacity: 0.4; border: 2px dashed #1877F2 !important; }
+        .gradient-ribbon {
+            background: linear-gradient(90deg, rgba(24,119,242,0.15) 0%, rgba(16,185,129,0.15) 100%);
+        }
+        @keyframes pulse-subtle {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.98); }
+        }
+        .pulse-badge { animation: pulse-subtle 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-[#0B0F19] text-slate-100 min-h-screen font-sans flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- TOPBAR -->
+    <header class="bg-[#111827]/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40 px-4 lg:px-8 py-3">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('dashboard')">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#1877F2] to-emerald-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <i data-lucide="activity" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">UtmFlow</span>
+                        <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30">AdTech 2.0</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Tracking, Lucro Real & Meta Ads Manager</p>
+                </div>
+            </div>
+
+            <!-- Ad Account Selector & Period Controls -->
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Ad Accounts Dropdown -->
+                <div class="relative">
+                    <select id="accountSelector" onchange="onAccountChange()" class="bg-[#1F2937] border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-blue-500 cursor-pointer">
+                        <option value="all">Todas as Contas Ativas</option>
+                    </select>
+                </div>
+
+                <!-- Period Selector -->
+                <div class="relative">
+                    <select id="periodSelector" onchange="onPeriodChange()" class="bg-[#1F2937] border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-blue-500 cursor-pointer font-medium">
+                        <option value="today" selected>Hoje</option>
+                        <option value="yesterday">Ontem</option>
+                        <option value="last_7d">Últimos 7 dias</option>
+                        <option value="this_month">Este mês</option>
+                        <option value="all">Todo o período</option>
+                        <option value="custom">📅 Personalizado</option>
+                    </select>
+                </div>
+
+                <!-- Custom Date Range Inputs -->
+                <div id="customDateContainer" class="hidden flex items-center gap-1.5 bg-[#1F2937] border border-slate-700 rounded-lg p-1 text-xs">
+                    <input type="date" id="startDateInput" class="bg-transparent border-0 text-slate-200 text-xs px-2 py-1 focus:outline-none">
+                    <span class="text-slate-500">até</span>
+                    <input type="date" id="endDateInput" class="bg-transparent border-0 text-slate-200 text-xs px-2 py-1 focus:outline-none">
+                    <button onclick="applyCustomDates()" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-semibold transition">Aplicar</button>
+                </div>
+
+                <!-- Sync Button -->
+                <button onclick="syncCampaignsData()" id="syncBtn" title="Sincronizar com Meta Marketing API" class="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-300 px-3 py-2 rounded-lg transition font-medium">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5" id="syncIcon"></i>
+                    <span class="hidden sm:inline">Sincronizar</span>
+                </button>
+
+                <!-- Audio Ka-Ching Toggle & Test -->
+                <button onclick="toggleAudio()" id="audioToggleBtn" title="Ativar/Desativar Som de Venda Ka-ching" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-emerald-400 transition">
+                    <i data-lucide="volume-2" class="w-4 h-4" id="audioIcon"></i>
+                </button>
+
+                <button onclick="simulateSale()" class="flex items-center space-x-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs px-3 py-2 rounded-lg font-bold shadow-lg shadow-emerald-600/20 transition">
+                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                    <span>Simular Venda VIP</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN NAVIGATION TABS -->
+        <nav class="max-w-7xl mx-auto mt-3 pt-3 border-t border-slate-800 flex space-x-1 sm:space-x-4 overflow-x-auto text-xs sm:text-sm font-semibold">
+            <button onclick="switchTab('dashboard')" id="tabBtn_dashboard" class="tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-blue-400 bg-blue-500/10 border border-blue-500/20 transition">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Dashboard & Lucro Real</span>
+            </button>
+            <button onclick="switchTab('campaigns')" id="tabBtn_campaigns" class="tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                <span>Gerenciador de Anúncios</span>
+                <span id="navCampCount" class="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">4</span>
+            </button>
+            <button onclick="switchTab('webhooks')" id="tabBtn_webhooks" class="tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+                <i data-lucide="webhook" class="w-4 h-4"></i>
+                <span>Webhooks & Pixel</span>
+            </button>
+            <button onclick="switchTab('capi')" id="tabBtn_capi" class="tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+                <i data-lucide="server" class="w-4 h-4"></i>
+                <span>Meta CAPI Server-Side</span>
+            </button>
+            <button onclick="switchTab('rules')" id="tabBtn_rules" class="tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+                <i data-lucide="bot" class="w-4 h-4"></i>
+                <span>Motor de Regras</span>
+            </button>
+            <button onclick="switchTab('settings')" id="tabBtn_settings" class="tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition">
+                <i data-lucide="sliders" class="w-4 h-4"></i>
+                <span>Taxas & Conexão Meta</span>
+            </button>
+        </nav>
+    </header>
+
+    <!-- MAIN APP CONTENT -->
+    <main class="max-w-7xl mx-auto p-4 lg:p-8 flex-1 w-full space-y-6">
+
+        <!-- ============================================================== -->
+        <!-- TAB 1: DASHBOARD GERAL & MÉTRICAS DE LUCRO REAL (UTMIFY FUSION)-->
+        <!-- ============================================================== -->
+        <section id="view_dashboard" class="space-y-6">
+
+            <!-- FUNIL DE CONVERSÃO CONTINUO (RIBBON META ADS STYLE) -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-4 shadow-xl">
+                <div class="flex items-center justify-between mb-3 px-2">
+                    <div class="flex items-center space-x-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                        <h2 class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Funil de Conversão Ribbon em Tempo Real</h2>
+                    </div>
+                    <span class="text-xs text-slate-400">Atribuição First-Click + CAPI Meta</span>
+                </div>
+
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center">
+                    <!-- Step 1: Cliques -->
+                    <div class="bg-[#1F2937]/80 border border-slate-800 rounded-xl p-3 relative overflow-hidden">
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">1. Cliques Meta</div>
+                        <div class="text-xl sm:text-2xl font-black text-white mt-1" id="funnel_clicks">0</div>
+                        <div class="text-[10px] text-blue-400 mt-1 font-medium">Tráfego de Entrada</div>
+                    </div>
+
+                    <!-- Step 2: Vis. Página -->
+                    <div class="bg-[#1F2937]/80 border border-slate-800 rounded-xl p-3 relative overflow-hidden">
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">2. Vis. Página</div>
+                        <div class="text-xl sm:text-2xl font-black text-white mt-1" id="funnel_pv">0</div>
+                        <div class="text-[10px] text-emerald-400 mt-1 font-semibold" id="funnel_connect_rate">Connect Rate: 0%</div>
+                    </div>
+
+                    <!-- Step 3: ICs -->
+                    <div class="bg-[#1F2937]/80 border border-slate-800 rounded-xl p-3 relative overflow-hidden">
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">3. Initiate Checkout</div>
+                        <div class="text-xl sm:text-2xl font-black text-white mt-1" id="funnel_ic">0</div>
+                        <div class="text-[10px] text-amber-400 mt-1 font-semibold" id="funnel_pv_to_ic">Visita ➔ IC: 0%</div>
+                    </div>
+
+                    <!-- Step 4: Vendas Iniciadas -->
+                    <div class="bg-[#1F2937]/80 border border-slate-800 rounded-xl p-3 relative overflow-hidden">
+                        <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">4. Vendas Inic.</div>
+                        <div class="text-xl sm:text-2xl font-black text-white mt-1" id="funnel_vendas_inic">0</div>
+                        <div class="text-[10px] text-purple-400 mt-1 font-semibold" id="funnel_ic_to_init">IC ➔ Inic: 0%</div>
+                    </div>
+
+                    <!-- Step 5: Vendas Aprovadas -->
+                    <div class="col-span-2 md:col-span-1 bg-gradient-to-br from-emerald-950/40 to-[#1F2937] border border-emerald-500/30 rounded-xl p-3 relative overflow-hidden shadow-lg shadow-emerald-500/10">
+                        <div class="text-[11px] font-bold text-emerald-400 uppercase tracking-wider flex items-center justify-center space-x-1">
+                            <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                            <span>5. Vendas Aprovadas</span>
+                        </div>
+                        <div class="text-xl sm:text-2xl font-black text-emerald-400 mt-1" id="funnel_approved">0</div>
+                        <div class="text-[10px] text-emerald-300 mt-1 font-bold" id="funnel_conv_rate">Conversão Geral: 0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DRAGGABLE & RESIZABLE METRICS GRID (LUCRO REAL & UTMIFY STYLE) -->
+            <div>
+                <div class="flex items-center justify-between mb-3 px-1">
+                    <h3 class="text-xs uppercase font-extrabold tracking-wider text-slate-400">Métricas Financeiras & Lucro Real (Arraste para Organizar)</h3>
+                    <button onclick="resetDashboardLayout()" class="text-xs text-slate-400 hover:text-slate-200 flex items-center space-x-1">
+                        <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                        <span>Redefinir Layout</span>
+                    </button>
+                </div>
+
+                <div id="metricsGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    
+                    <!-- Card 1: Faturamento Bruto -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_gross">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">Faturamento Bruto</span>
+                            <div class="p-2 rounded-xl bg-blue-500/10 text-blue-400">
+                                <i data-lucide="wallet" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-white" id="stat_gross">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2 flex items-center space-x-1">
+                            <span class="text-emerald-400 font-semibold" id="stat_approved_count">0</span>
+                            <span>vendas pagas aprovadas</span>
+                        </p>
+                    </div>
+
+                    <!-- Card 2: Lucro Real (Estilo UTMify) -->
+                    <div class="metric-card bg-[#111827] border border-emerald-500/30 rounded-2xl p-5 hover:border-emerald-500/50 transition shadow-xl shadow-emerald-500/5 cursor-move" draggable="true" data-card-id="card_profit">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Lucro Real (No Bolso)</span>
+                            <div class="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+                                <i data-lucide="trending-up" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-emerald-400" id="stat_profit">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2">Líquido - Gasto Meta - Custo Prod.</p>
+                    </div>
+
+                    <!-- Card 3: Gasto em Anúncios (Meta Ads) -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_spend">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">Gasto Total em Anúncios</span>
+                            <div class="p-2 rounded-xl bg-rose-500/10 text-rose-400">
+                                <i data-lucide="flame" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-white" id="stat_spend">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2">Sincronizado via Marketing API</p>
+                    </div>
+
+                    <!-- Card 4: ROAS Real -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_roas">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">ROAS Real</span>
+                            <div class="p-2 rounded-xl bg-purple-500/10 text-purple-400">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-purple-400" id="stat_roas">0,00x</div>
+                        <p class="text-xs text-slate-400 mt-2">Faturamento ÷ Investimento Meta</p>
+                    </div>
+
+                    <!-- Card 5: CPA Real -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_cpa">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">CPA Real</span>
+                            <div class="p-2 rounded-xl bg-amber-500/10 text-amber-400">
+                                <i data-lucide="target" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-white" id="stat_cpa">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2">Custo por Compra Realizada</p>
+                    </div>
+
+                    <!-- Card 6: Faturamento Líquido -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_net">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">Faturamento Líquido</span>
+                            <div class="p-2 rounded-xl bg-teal-500/10 text-teal-400">
+                                <i data-lucide="check-check" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-white" id="stat_net">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2">Descontando Impostos NF & Taxas</p>
+                    </div>
+
+                    <!-- Card 7: Vendas Pendentes (Pix & Boleto) -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_pending">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">Vendas Pendentes</span>
+                            <div class="p-2 rounded-xl bg-yellow-500/10 text-yellow-400">
+                                <i data-lucide="clock" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-yellow-400" id="stat_pending_val">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2 flex items-center space-x-1">
+                            <span id="stat_pending_cnt">0</span>
+                            <span>pedidos Pix / Boleto aguardando</span>
+                        </p>
+                    </div>
+
+                    <!-- Card 8: Ticket Médio & LTV -->
+                    <div class="metric-card bg-[#111827] border border-slate-800 rounded-2xl p-5 hover:border-slate-700 transition shadow-lg cursor-move" draggable="true" data-card-id="card_ticket">
+                        <div class="flex items-center justify-between text-slate-400 mb-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider">Ticket Médio / LTV</span>
+                            <div class="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
+                                <i data-lucide="repeat" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl sm:text-3xl font-black text-white" id="stat_ticket">R$ 0,00</div>
+                        <p class="text-xs text-slate-400 mt-2">LTV Estimado: <span class="text-indigo-400 font-bold" id="stat_ltv">R$ 0,00</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ORIGEM DAS VENDAS (GRÁFICO COM CORES OFICIAIS) -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h3 class="text-sm font-bold text-white">Vendas por Origem de Tráfego (UTM Source)</h3>
+                        <p class="text-xs text-slate-400">Atribuição multicanal rastreada via cookies e tags de checkout</p>
+                    </div>
+                </div>
+
+                <div class="space-y-3" id="sourcesContainer">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 2: GERENCIADOR DE ANÚNCIOS (FACEBOOK ADS MANAGER REPLICA)  -->
+        <!-- ============================================================== -->
+        <section id="view_campaigns" class="hidden space-y-4">
+            
+            <!-- SUB-TABS: Campanhas, Conjuntos, Anúncios -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-[#111827] border border-slate-800 p-3 rounded-2xl">
+                <div class="flex items-center space-x-2">
+                    <button onclick="setAdsSubTab('campaigns')" id="subtab_campaigns" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#1877F2] text-white transition flex items-center space-x-2">
+                        <i data-lucide="layers" class="w-4 h-4"></i>
+                        <span>Campanhas</span>
+                        <span id="badge_camp_cnt" class="bg-black/30 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">0</span>
+                    </button>
+                    <button onclick="setAdsSubTab('adsets')" id="subtab_adsets" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2">
+                        <i data-lucide="boxes" class="w-4 h-4"></i>
+                        <span>Conjuntos de Anúncio</span>
+                        <span id="badge_adset_cnt" class="bg-slate-700 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">0</span>
+                    </button>
+                    <button onclick="setAdsSubTab('ads')" id="subtab_ads" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2">
+                        <i data-lucide="image" class="w-4 h-4"></i>
+                        <span>Anúncios (Criativos)</span>
+                        <span id="badge_ads_cnt" class="bg-slate-700 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">0</span>
+                    </button>
+                </div>
+
+                <!-- Filters & Column Config -->
+                <div class="flex items-center space-x-2">
+                    <!-- Status Filter -->
+                    <select id="adsStatusFilter" onchange="loadAdsManagerData()" class="bg-[#1F2937] border border-slate-700 text-xs text-slate-200 rounded-lg px-3 py-2 focus:outline-none">
+                        <option value="ALL">Status: Todos</option>
+                        <option value="ACTIVE">Ativos</option>
+                        <option value="PAUSED">Pausados</option>
+                    </select>
+
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-3 text-slate-400"></i>
+                        <input type="text" id="adsSearchInput" onkeyup="loadAdsManagerData()" placeholder="Buscar por nome..." class="bg-[#1F2937] border border-slate-700 text-xs text-slate-200 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-blue-500 w-40 sm:w-56">
+                    </div>
+
+                    <!-- Column Customizer Button -->
+                    <button onclick="openColumnCustomizer()" class="p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-300 transition" title="Personalizar Colunas">
+                        <i data-lucide="columns" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- FLOATING BULK ACTIONS BAR -->
+            <div id="bulkActionBar" class="hidden bg-blue-900/90 border border-blue-500/50 backdrop-blur-md px-4 py-2.5 rounded-xl shadow-2xl flex items-center justify-between flex-wrap gap-3 animate-fadeIn">
+                <div class="flex items-center space-x-2 text-xs font-bold text-white">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span id="bulkSelectedCount">0 itens selecionados</span>
+                </div>
+                <div class="flex items-center space-x-2 text-xs">
+                    <button onclick="bulkAction('activate')" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1">
+                        <i data-lucide="play" class="w-3 h-3"></i>
+                        <span>Ativar</span>
+                    </button>
+                    <button onclick="bulkAction('pause')" class="bg-yellow-600 hover:bg-yellow-500 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1">
+                        <i data-lucide="pause" class="w-3 h-3"></i>
+                        <span>Pausar</span>
+                    </button>
+                    <button onclick="bulkAction('duplicate')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1">
+                        <i data-lucide="copy" class="w-3 h-3"></i>
+                        <span>Duplicar</span>
+                    </button>
+                    <button onclick="promptBulkBudget()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1">
+                        <i data-lucide="dollar-sign" class="w-3 h-3"></i>
+                        <span>Orçamento</span>
+                    </button>
+                    <button onclick="bulkAction('delete')" class="bg-rose-600 hover:bg-rose-500 text-white px-3 py-1.5 rounded-lg font-semibold transition flex items-center space-x-1">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                        <span>Excluir</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- TABLE CONTAINER -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs" id="adsManagerTable">
+                        <thead class="bg-[#1F2937]/90 text-slate-400 uppercase font-semibold border-b border-slate-800">
+                            <tr id="adsTableHeaderRow">
+                                <th class="p-3 w-10 text-center">
+                                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllRows(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="adsTableBody" class="divide-y divide-slate-800/60 font-medium"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 3: WEBHOOKS UNIVERSAIS & SCRIPT DO PIXEL (UTMFLOW.JS)      -->
+        <!-- ============================================================== -->
+        <section id="view_webhooks" class="hidden space-y-6">
+            
+            <!-- Webhook URLs Grid -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+                        <i data-lucide="webhook" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">URLs de Webhook Prontas para Plataformas</h2>
+                        <p class="text-xs text-slate-400">Copie o link abaixo e cole na área de Webhooks/Postback da sua plataforma de vendas</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Kiwify -->
+                    <div class="bg-[#1F2937]/60 border border-slate-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-emerald-400 uppercase">Kiwify Webhook</span>
+                            <button onclick="copyWebhook('kiwify')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copy_kiwify_txt">Copiar</span>
+                            </button>
+                        </div>
+                        <input type="text" readonly id="wh_kiwify" class="w-full bg-[#111827] border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- Hotmart -->
+                    <div class="bg-[#1F2937]/60 border border-slate-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-orange-400 uppercase">Hotmart Webhook</span>
+                            <button onclick="copyWebhook('hotmart')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copy_hotmart_txt">Copiar</span>
+                            </button>
+                        </div>
+                        <input type="text" readonly id="wh_hotmart" class="w-full bg-[#111827] border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- Greenn -->
+                    <div class="bg-[#1F2937]/60 border border-slate-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-teal-400 uppercase">Greenn Webhook</span>
+                            <button onclick="copyWebhook('greenn')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copy_greenn_txt">Copiar</span>
+                            </button>
+                        </div>
+                        <input type="text" readonly id="wh_greenn" class="w-full bg-[#111827] border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- Cakto -->
+                    <div class="bg-[#1F2937]/60 border border-slate-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-purple-400 uppercase">Cakto Webhook</span>
+                            <button onclick="copyWebhook('cakto')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copy_cakto_txt">Copiar</span>
+                            </button>
+                        </div>
+                        <input type="text" readonly id="wh_cakto" class="w-full bg-[#111827] border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- Wiapy -->
+                    <div class="bg-[#1F2937]/60 border border-slate-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-blue-400 uppercase">Wiapy Webhook</span>
+                            <button onclick="copyWebhook('wiapy')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copy_wiapy_txt">Copiar</span>
+                            </button>
+                        </div>
+                        <input type="text" readonly id="wh_wiapy" class="w-full bg-[#111827] border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none font-mono">
+                    </div>
+
+                    <!-- Generic / Universal -->
+                    <div class="bg-[#1F2937]/60 border border-slate-800 rounded-xl p-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold text-slate-300 uppercase">Webhook Universal (Outras)</span>
+                            <button onclick="copyWebhook('generic')" class="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-semibold">
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span id="copy_generic_txt">Copiar</span>
+                            </button>
+                        </div>
+                        <input type="text" readonly id="wh_generic" class="w-full bg-[#111827] border border-slate-800 text-xs text-slate-300 rounded px-2.5 py-1.5 focus:outline-none font-mono">
+                    </div>
+                </div>
+            </div>
+
+            <!-- PIXEL SCRIPT (UTMFLOW.JS) EMBED CODE -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                            <i data-lucide="code" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-white">Script de Rastreamento & Decorador de Checkout</h2>
+                            <p class="text-xs text-slate-400">Insira este código antes do fechamento da tag &lt;/head&gt; em todas as suas páginas de vendas</p>
+                        </div>
+                    </div>
+                    <button onclick="copyPixelScript()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition">
+                        <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                        <span id="copy_script_txt">Copiar Script</span>
+                    </button>
+                </div>
+
+                <pre class="bg-[#0B0F19] border border-slate-800 rounded-xl p-4 text-xs font-mono text-emerald-400 overflow-x-auto"><code id="pixelScriptCode">&lt;!-- UtmFlow Pixel &amp; Checkout Link Decorator v2.0 --&gt;
+&lt;script src="https://SEU-DOMINIO/utmflow.js" defer&gt;&lt;/script&gt;</code></pre>
+                
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs text-slate-400">
+                    <div class="flex items-start space-x-2">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                        <span>Captura automática de UTMs e persistência por 90 dias em Cookies</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                        <span>Geração nativa de cookies _fbp e _fbc para Meta CAPI</span>
+                    </div>
+                    <div class="flex items-start space-x-2">
+                        <i data-lucide="check" class="w-4 h-4 text-emerald-400 shrink-0 mt-0.5"></i>
+                        <span>Decora automaticamente botões e links de checkout da Kiwify, Hotmart, etc.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 4: META CONVERSIONS API (CAPI SERVER-SIDE) & MULTI-PIXEL   -->
+        <!-- ============================================================== -->
+        <section id="view_capi" class="hidden space-y-6">
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+                            <i data-lucide="shield-check" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-white">Meta Conversions API (CAPI) & Multi-Pixel</h2>
+                            <p class="text-xs text-slate-400">Envio de compras direto do servidor com hash criptográfico SHA-256 e teste em 1-clique</p>
+                        </div>
+                    </div>
+                    <button onclick="openAddPixelModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Adicionar Novo Pixel CAPI</span>
+                    </button>
+                </div>
+
+                <!-- Pixels List Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-[#1F2937] text-slate-400 uppercase font-semibold">
+                            <tr>
+                                <th class="p-3">Nome do Pixel</th>
+                                <th class="p-3">Pixel ID</th>
+                                <th class="p-3">Test Event Code</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pixelsTableBody" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+
+                <!-- Live CAPI Response Viewer Box -->
+                <div class="mt-6">
+                    <h4 class="text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-2">Logs de Resposta da Graph API (CAPI)</h4>
+                    <pre id="capiLogViewer" class="bg-[#0B0F19] border border-slate-800 rounded-xl p-4 text-xs font-mono text-slate-300 max-h-48 overflow-y-auto">Nenhum teste disparado recentemente. Clique em "Disparar Teste CAPI" para validar com o Gerenciador de Eventos da Meta.</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 5: MOTOR DE REGRAS & AUTOMAÇÕES (STOP LOSS E ESCALA)       -->
+        <!-- ============================================================== -->
+        <section id="view_rules" class="hidden space-y-6">
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-6 flex-wrap gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                            <i data-lucide="bot" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-white">Motor de Regras Inteligentes & Stop Loss</h2>
+                            <p class="text-xs text-slate-400">Execução em background contínua para pausar campanhas ruins e escalar orçamentos lucrativos</p>
+                        </div>
+                    </div>
+                    <button onclick="openAddRuleModal()" class="bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Criar Nova Regra</span>
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto mb-6">
+                    <table class="w-full text-left text-xs">
+                        <thead class="bg-[#1F2937] text-slate-400 uppercase font-semibold">
+                            <tr>
+                                <th class="p-3">Nome da Regra</th>
+                                <th class="p-3">Tipo</th>
+                                <th class="p-3">Condição de Gatilho</th>
+                                <th class="p-3">Ação Automática</th>
+                                <th class="p-3">Ativa</th>
+                                <th class="p-3 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rulesTableBody" class="divide-y divide-slate-800"></tbody>
+                    </table>
+                </div>
+
+                <div>
+                    <h3 class="text-xs uppercase font-extrabold tracking-wider text-slate-400 mb-3">Histórico de Execuções Automáticas (Logs)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-[#1F2937] text-slate-400 uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3">Data/Hora (UTC)</th>
+                                    <th class="p-3">Regra</th>
+                                    <th class="p-3">Ação</th>
+                                    <th class="p-3">Detalhes</th>
+                                    <th class="p-3">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ruleLogsBody" class="divide-y divide-slate-800 font-mono"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ============================================================== -->
+        <!-- TAB 6: CONFIGURAÇÕES, TAXAS & CONEXÃO OFICIAL META             -->
+        <!-- ============================================================== -->
+        <section id="view_settings" class="hidden space-y-6">
+            
+            <!-- META INTEGRATION CARD -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center justify-between mb-4 flex-wrap gap-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2.5 rounded-xl bg-[#1877F2]/10 text-[#1877F2]">
+                            <i data-lucide="facebook" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-white">Conexão Oficial com a Meta (Facebook Marketing API)</h2>
+                            <p class="text-xs text-slate-400">Escolha entre Login 1-Clique oficial (60 dias) ou Token Permanente de Usuário do Sistema da BM</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="openManualTokenModal()" class="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition">
+                            <i data-lucide="key" class="w-4 h-4 text-amber-400"></i>
+                            <span>Adicionar Token Permanente BM</span>
+                        </button>
+                        <button onclick="disconnectMeta()" class="bg-rose-900/40 hover:bg-rose-800/60 border border-rose-500/30 text-rose-300 px-3 py-2 rounded-xl text-xs font-semibold flex items-center space-x-1.5 transition">
+                            <i data-lucide="log-out" class="w-4 h-4"></i>
+                            <span>Desconectar</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OAuth Configuration Form -->
+                <div class="bg-[#1F2937]/50 border border-slate-800 rounded-xl p-4 mb-4">
+                    <h3 class="text-xs font-bold uppercase text-blue-400 mb-3">Configuração do App Meta (OAuth 2.0)</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Meta App ID</label>
+                            <input type="text" id="metaAppId" placeholder="Ex: 102938475610293" class="w-full bg-[#111827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Meta App Secret</label>
+                            <input type="password" id="metaAppSecret" placeholder="••••••••••••••••" class="w-full bg-[#111827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1">Redirect URI (Callback)</label>
+                            <input type="text" readonly id="metaRedirectUri" class="w-full bg-[#111827] border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-400 focus:outline-none">
+                        </div>
+                    </div>
+                    <div class="mt-3 flex justify-end space-x-2">
+                        <button onclick="saveMetaOAuthConfig()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition">Salvar Chaves</button>
+                        <button onclick="startMetaOAuth()" class="bg-[#1877F2] hover:bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-blue-500/20">
+                            <i data-lucide="facebook" class="w-4 h-4"></i>
+                            <span>Conectar com Facebook (1-Clique)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Connected Accounts Switcher Table -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-xs font-bold uppercase text-slate-400">Contas de Anúncio Autorizadas</h4>
+                        <div class="flex items-center space-x-2 text-xs">
+                            <button onclick="toggleAllAccounts(true)" class="text-blue-400 hover:underline">Marcar Todas</button>
+                            <span class="text-slate-600">|</span>
+                            <button onclick="toggleAllAccounts(false)" class="text-slate-400 hover:underline">Desmarcar Todas</button>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-[#1F2937] text-slate-400 uppercase font-semibold">
+                                <tr>
+                                    <th class="p-3 w-16 text-center">Ativa</th>
+                                    <th class="p-3">Nome da Conta</th>
+                                    <th class="p-3">ID da Conta</th>
+                                    <th class="p-3">Moeda / Fuso</th>
+                                    <th class="p-3">Tipo Conexão</th>
+                                </tr>
+                            </thead>
+                            <tbody id="connectedAccountsTableBody" class="divide-y divide-slate-800"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FINANCIAL PARAMETERS -->
+            <div class="bg-[#111827] border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex items-center space-x-3 mb-4">
+                    <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                        <i data-lucide="percent" class="w-6 h-6"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-bold text-white">Parâmetros Financeiros & Taxas de Gateway</h2>
+                        <p class="text-xs text-slate-400">Configure suas taxas reais para cálculo automático do Lucro Líquido Real</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Alíquota de Imposto NF (%)</label>
+                        <input type="number" step="0.1" id="finTaxRate" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Taxa do Gateway / Checkout (%)</label>
+                        <input type="number" step="0.1" id="finGatewayRate" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Taxa Fixa do Gateway (R$)</label>
+                        <input type="number" step="0.01" id="finGatewayFixed" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Custo Médio de Produto (%)</label>
+                        <input type="number" step="0.1" id="finProductCost" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="mt-4 flex justify-end">
+                    <button onclick="saveFinancialSettings()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 shadow-lg shadow-emerald-500/20">
+                        <i data-lucide="save" class="w-4 h-4"></i>
+                        <span>Salvar Parâmetros Financeiros</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- MODAL: ADD MANUAL PERMANENT TOKEN -->
+    <div id="modalManualToken" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#111827] border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="key" class="w-5 h-5 text-amber-400"></i>
+                    <span>Adicionar Token Permanente BM</span>
+                </h3>
+                <button onclick="closeModal('modalManualToken')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-slate-400 mb-4">
+                Cole abaixo o Token de Acesso gerado no seu Gerenciador de Negócios (business.facebook.com/settings) através de um <strong>Usuário do Sistema Administrador</strong> com a permissão <code>ads_read</code>.
+            </p>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Nome de Identificação</label>
+                    <input type="text" id="manualTokenName" value="BM Principal (Nunca Expira)" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Token de Acesso Permanente (EAAB...)</label>
+                    <textarea id="manualTokenValue" rows="4" placeholder="EAAB..." class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none font-mono"></textarea>
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('modalManualToken')" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800">Cancelar</button>
+                <button onclick="submitManualToken()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-blue-500/20">Validar &amp; Importar Contas</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD PIXEL CAPI -->
+    <div id="modalAddPixel" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#111827] border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="server" class="w-5 h-5 text-blue-400"></i>
+                    <span>Cadastrar Pixel CAPI</span>
+                </h3>
+                <button onclick="closeModal('modalAddPixel')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Nome do Pixel</label>
+                    <input type="text" id="pixelName" placeholder="Ex: Pixel VSL Oferta 01" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Pixel ID (Meta)</label>
+                    <input type="text" id="pixelMetaId" placeholder="Ex: 984729103847291" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Token de Acesso CAPI (Conversions API)</label>
+                    <textarea id="pixelToken" rows="3" placeholder="EAAB..." class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none font-mono"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Código de Teste do Gerenciador de Eventos (Opcional)</label>
+                    <input type="text" id="pixelTestCode" placeholder="Ex: TEST12345" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none font-mono">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('modalAddPixel')" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800">Cancelar</button>
+                <button onclick="submitNewPixel()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-blue-500/20">Salvar Pixel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD AUTOMATED RULE -->
+    <div id="modalAddRule" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#111827] border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="bot" class="w-5 h-5 text-purple-400"></i>
+                    <span>Nova Regra Automatizada</span>
+                </h3>
+                <button onclick="closeModal('modalAddRule')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Nome da Regra</label>
+                    <input type="text" id="ruleName" placeholder="Ex: Stop Loss R$ 100 sem vendas" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Tipo de Regra</label>
+                        <select id="ruleType" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                            <option value="stop_loss">Stop Loss (Pausar Campanha)</option>
+                            <option value="scale">Escala Inteligente (Subir Orçamento)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1">Valor Gatilho (R$ ou ROAS)</label>
+                        <input type="number" step="0.1" id="ruleThreshold" value="120" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">Ação</label>
+                    <select id="ruleAction" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                        <option value="pause_campaign">Pausar Campanha Imediatamente</option>
+                        <option value="increase_budget">Aumentar Orçamento Diário em %</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1">% de Aumento (Para Escala)</label>
+                    <input type="number" step="1" id="ruleActionValue" value="20" class="w-full bg-[#1F2937] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none">
+                </div>
+            </div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('modalAddRule')" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800">Cancelar</button>
+                <button onclick="submitNewRule()" class="bg-purple-600 hover:bg-purple-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-purple-500/20">Criar Regra</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: COLUMN CUSTOMIZER -->
+    <div id="modalColumns" class="hidden fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-[#111827] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-base font-bold text-white flex items-center space-x-2">
+                    <i data-lucide="columns" class="w-5 h-5 text-blue-400"></i>
+                    <span>Personalizar Colunas da Tabela</span>
+                </h3>
+                <button onclick="closeModal('modalColumns')" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="space-y-2 max-h-72 overflow-y-auto pr-1" id="columnsListContainer"></div>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button onclick="closeModal('modalColumns')" class="px-4 py-2 rounded-xl text-xs text-slate-400 hover:bg-slate-800">Cancelar</button>
+                <button onclick="saveColumnPreferences()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-2 rounded-xl text-xs font-bold transition shadow-lg shadow-blue-500/20">Salvar Colunas</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- JAVASCRIPT FRONTEND APPLICATION ENGINE                         -->
+    <!-- ============================================================== -->
+    <script>
+        // Global State
+        const state = {
+            currentTab: 'dashboard',
+            currentAdsSubTab: 'campaigns',
+            period: 'today',
+            startDate: '',
+            endDate: '',
+            selectedAccountId: 'all',
+            selectedRowIds: new Set(),
+            audioEnabled: true,
+            lastSaleCheckedTime: new Date().toISOString(),
+            adsColumns: [
+                { id: 'name', label: 'Nome', visible: true },
+                { id: 'status', label: 'Veiculação', visible: true },
+                { id: 'daily_budget', label: 'Orçamento Diário', visible: true },
+                { id: 'spend', label: 'Gasto', visible: true },
+                { id: 'roas', label: 'ROAS', visible: true },
+                { id: 'cpa', label: 'CPA', visible: true },
+                { id: 'conversions', label: 'Compras', visible: true },
+                { id: 'clicks', label: 'Cliques', visible: true },
+                { id: 'ctr', label: 'CTR', visible: true },
+                { id: 'cpc', label: 'CPC', visible: true },
+                { id: 'impressions', label: 'Impressões', visible: false }
+            ]
+        };
+
+        // --- AUDIO ENGINE (Web Audio API Synthesizer for "Ka-ching" Cash Register Sound) ---
+        let audioCtx = null;
+        function playKachingSound() {
+            if (!state.audioEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                const now = audioCtx.currentTime;
+
+                // Stage 1: High metallic ping
+                const osc1 = audioCtx.createOscillator();
+                const gain1 = audioCtx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(987.77, now);
+                osc1.frequency.exponentialRampToValueAtTime(1318.51, now + 0.08);
+                gain1.gain.setValueAtTime(0.35, now);
+                gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc1.connect(gain1);
+                gain1.connect(audioCtx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.6);
+
+                // Stage 2: Brass sweep
+                setTimeout(() => {
+                    const t2 = audioCtx.currentTime;
+                    const osc2 = audioCtx.createOscillator();
+                    const gain2 = audioCtx.createGain();
+                    osc2.type = 'triangle';
+                    osc2.frequency.setValueAtTime(1760.00, t2);
+                    osc2.frequency.exponentialRampToValueAtTime(2093.00, t2 + 0.05);
+                    gain2.gain.setValueAtTime(0.4, t2);
+                    gain2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.5);
+                    osc2.connect(gain2);
+                    gain2.connect(audioCtx.destination);
+                    osc2.start(t2);
+                    osc2.stop(t2 + 0.5);
+                }, 80);
+
+            } catch (e) {
+                console.error("Audio error", e);
+            }
+        }
+
+        function toggleAudio() {
+            state.audioEnabled = !state.audioEnabled;
+            const btn = document.getElementById('audioToggleBtn');
+            const icon = document.getElementById('audioIcon');
+            if (state.audioEnabled) {
+                btn.className = 'p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-emerald-400 transition';
+                icon.setAttribute('data-lucide', 'volume-2');
+                showToast("Som Ka-ching ativado!", "info");
+                playKachingSound();
+            } else {
+                btn.className = 'p-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg text-slate-500 transition';
+                icon.setAttribute('data-lucide', 'volume-x');
+                showToast("Som desativado", "info");
+            }
+            lucide.createIcons();
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-900/90 border-emerald-500/50 text-emerald-200' :
+                            type === 'error' ? 'bg-rose-900/90 border-rose-500/50 text-rose-200' :
+                            'bg-blue-900/90 border-blue-500/50 text-blue-200';
+            const iconName = type === 'success' ? 'check-circle' : type === 'error' ? 'alert-triangle' : 'info';
+            
+            toast.className = `flex items-center space-x-2 border backdrop-blur-md px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold pointer-events-auto transform transition duration-300 translate-y-2 ${bgClass}`;
+            toast.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i><span>${message}</span>`;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // --- NAVIGATION TABS ---
+        function switchTab(tabId) {
+            state.currentTab = tabId;
+            const tabs = ['dashboard', 'campaigns', 'webhooks', 'capi', 'rules', 'settings'];
+            tabs.forEach(t => {
+                const view = document.getElementById(`view_${t}`);
+                const btn = document.getElementById(`tabBtn_${t}`);
+                if (view && btn) {
+                    if (t === tabId) {
+                        view.classList.remove('hidden');
+                        btn.className = 'tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-blue-400 bg-blue-500/10 border border-blue-500/20 transition';
+                    } else {
+                        view.classList.add('hidden');
+                        btn.className = 'tab-btn px-3 py-2 rounded-lg flex items-center space-x-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition';
+                    }
+                }
+            });
+
+            if (tabId === 'dashboard') loadDashboardStats();
+            if (tabId === 'campaigns') loadAdsManagerData();
+            if (tabId === 'capi') loadPixels();
+            if (tabId === 'rules') { loadRules(); loadRuleLogs(); }
+            if (tabId === 'settings') { loadMetaConfig(); loadAccounts(); loadFinancialSettings(); }
+            lucide.createIcons();
+        }
+
+        // --- PERIOD FILTER ---
+        function onPeriodChange() {
+            const val = document.getElementById('periodSelector').value;
+            state.period = val;
+            const customBox = document.getElementById('customDateContainer');
+            if (val === 'custom') {
+                customBox.classList.remove('hidden');
+            } else {
+                customBox.classList.add('hidden');
+                loadDashboardStats();
+                if (state.currentTab === 'campaigns') loadAdsManagerData();
+            }
+        }
+
+        function applyCustomDates() {
+            state.startDate = document.getElementById('startDateInput').value;
+            state.endDate = document.getElementById('endDateInput').value;
+            if (!state.startDate || !state.endDate) {
+                showToast("Selecione data inicial e final", "error");
+                return;
+            }
+            loadDashboardStats();
+            if (state.currentTab === 'campaigns') loadAdsManagerData();
+            showToast("Filtro personalizado aplicado!", "success");
+        }
+
+        function onAccountChange() {
+            state.selectedAccountId = document.getElementById('accountSelector').value;
+            loadDashboardStats();
+            if (state.currentTab === 'campaigns') loadAdsManagerData();
+        }
+
+        // --- DASHBOARD DATA & FINANCIAL CALCULATIONS ---
+        async function loadDashboardStats() {
+            try {
+                let url = `/api/dashboard/stats?period=${state.period}`;
+                if (state.period === 'custom' && state.startDate && state.endDate) {
+                    url += `&start_date=${state.startDate}&end_date=${state.endDate}`;
+                }
+                const res = await fetch(url);
+                const data = await res.json();
+                if (!data.success) return;
+
+                const fin = data.financial;
+                const trk = data.funnel;
+
+                const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                document.getElementById('stat_gross').innerText = fmt(fin.gross_revenue);
+                document.getElementById('stat_profit').innerText = fmt(fin.real_profit);
+                document.getElementById('stat_spend').innerText = fmt(fin.total_spend);
+                document.getElementById('stat_roas').innerText = `${fin.real_roas.toFixed(2)}x`;
+                document.getElementById('stat_cpa').innerText = fmt(fin.real_cpa);
+                document.getElementById('stat_net').innerText = fmt(fin.net_revenue);
+                document.getElementById('stat_pending_val').innerText = fmt(fin.pending_revenue);
+                document.getElementById('stat_ticket').innerText = fmt(fin.ticket_medio);
+                document.getElementById('stat_ltv').innerText = fmt(fin.ltv);
+                document.getElementById('stat_approved_count').innerText = fin.approved_sales;
+                document.getElementById('stat_pending_cnt').innerText = fin.pending_sales;
+
+                document.getElementById('funnel_clicks').innerText = trk.clicks.toLocaleString('pt-BR');
+                document.getElementById('funnel_pv').innerText = trk.page_views.toLocaleString('pt-BR');
+                document.getElementById('funnel_connect_rate').innerText = `Connect Rate: ${trk.connect_rate}%`;
+                document.getElementById('funnel_ic').innerText = trk.initiate_checkouts.toLocaleString('pt-BR');
+                document.getElementById('funnel_pv_to_ic').innerText = `Visita ➔ IC: ${trk.pv_to_ic}%`;
+                document.getElementById('funnel_vendas_inic').innerText = trk.vendas_iniciadas.toLocaleString('pt-BR');
+                document.getElementById('funnel_ic_to_init').innerText = `IC ➔ Inic: ${trk.ic_to_init}%`;
+                document.getElementById('funnel_approved').innerText = trk.approved_sales.toLocaleString('pt-BR');
+                document.getElementById('funnel_conv_rate').innerText = `Conversão Geral: ${trk.overall_conversion}%`;
+
+                renderSourcesChart(data.sources, fin.gross_revenue);
+
+            } catch (e) {
+                console.error("Dashboard stats error", e);
+            }
+        }
+
+        function renderSourcesChart(sources, totalGross) {
+            const container = document.getElementById('sourcesContainer');
+            container.innerHTML = '';
+
+            const colors = {
+                facebook: { bg: '#1877F2', label: 'Meta Ads (Facebook)' },
+                instagram: { bg: '#E1306C', label: 'Instagram Ads / Bio' },
+                google: { bg: '#4285F4', label: 'Google Search / YouTube' },
+                tiktok: { bg: '#FE2C55', label: 'TikTok Ads' },
+                direto: { bg: '#10B981', label: 'Direto / Tráfego Orgânico' }
+            };
+
+            const entries = Object.entries(sources || {});
+            if (entries.length === 0) {
+                container.innerHTML = '<p class="text-xs text-slate-500 py-2">Nenhuma venda atribuída no período selecionado.</p>';
+                return;
+            }
+
+            entries.sort((a, b) => b[1] - a[1]);
+
+            entries.forEach(([src, amount]) => {
+                const sLower = src.toLowerCase();
+                const matched = colors[sLower] || { bg: '#6B7280', label: src.toUpperCase() };
+                const pct = totalGross > 0 ? ((amount / totalGross) * 100).toFixed(1) : 0;
+
+                const row = document.createElement('div');
+                row.className = 'space-y-1';
+                row.innerHTML = `
+                    <div class="flex items-center justify-between text-xs font-semibold">
+                        <div class="flex items-center space-x-2">
+                            <span class="w-3 h-3 rounded-full" style="background-color: ${matched.bg}"></span>
+                            <span class="text-slate-200">${matched.label}</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-white font-mono">R$ ${Number(amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                            <span class="text-slate-400 font-normal">(${pct}%)</span>
+                        </div>
+                    </div>
+                    <div class="w-full bg-[#1F2937] rounded-full h-2 overflow-hidden">
+                        <div class="h-2 rounded-full transition-all duration-500" style="width: ${pct}%; background-color: ${matched.bg}"></div>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        // --- GERENCIADOR DE ANÚNCIOS (ADS MANAGER REPLICA) ---
+        function setAdsSubTab(sub) {
+            state.currentAdsSubTab = sub;
+            ['campaigns', 'adsets', 'ads'].forEach(s => {
+                const b = document.getElementById(`subtab_${s}`);
+                if (s === sub) {
+                    b.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-[#1877F2] text-white transition flex items-center space-x-2';
+                } else {
+                    b.className = 'px-4 py-2 rounded-xl text-xs sm:text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800 transition flex items-center space-x-2';
+                }
+            });
+            state.selectedRowIds.clear();
+            updateBulkActionBar();
+            loadAdsManagerData();
+        }
+
+        async function loadAdsManagerData() {
+            const statusFilter = document.getElementById('adsStatusFilter').value;
+            const search = document.getElementById('adsSearchInput').value.trim();
+
+            let endpoint = `/api/${state.currentAdsSubTab}?account_id=${state.selectedAccountId}&status=${statusFilter}&search=${encodeURIComponent(search)}`;
+            
+            if (state.currentAdsSubTab === 'adsets' && state.selectedRowIds.size > 0) {
+                endpoint += `&campaign_ids=${Array.from(state.selectedRowIds).join(',')}`;
+            }
+
+            try {
+                const res = await fetch(endpoint);
+                const data = await res.json();
+                if (!data.success) return;
+
+                const items = data[state.currentAdsSubTab] || [];
+                
+                if (state.currentAdsSubTab === 'campaigns') {
+                    document.getElementById('badge_camp_cnt').innerText = items.length;
+                    document.getElementById('navCampCount').innerText = items.length;
+                } else if (state.currentAdsSubTab === 'adsets') {
+                    document.getElementById('badge_adset_cnt').innerText = items.length;
+                } else {
+                    document.getElementById('badge_ads_cnt').innerText = items.length;
+                }
+
+                renderAdsTable(items);
+            } catch (e) {
+                console.error("Ads Manager error", e);
+            }
+        }
+
+        function renderAdsTable(items) {
+            renderTableHeader();
+            const tbody = document.getElementById('adsTableBody');
+            tbody.innerHTML = '';
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" class="p-8 text-center text-slate-500">Nenhum item encontrado com os filtros atuais.</td></tr>`;
+                return;
+            }
+
+            items.forEach(item => {
+                const isChecked = state.selectedRowIds.has(item.id);
+                const tr = document.createElement('tr');
+                tr.className = `hover:bg-slate-800/40 transition cursor-pointer ${isChecked ? 'bg-blue-900/20' : ''}`;
+
+                let cellsHtml = `
+                    <td class="p-3 text-center" onclick="event.stopPropagation()">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleRowSelection('${item.id}', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                    </td>
+                `;
+
+                state.adsColumns.filter(c => c.visible).forEach(col => {
+                    cellsHtml += renderTableCell(col.id, item);
+                });
+
+                tr.innerHTML = cellsHtml;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        function renderTableHeader() {
+            const headerRow = document.getElementById('adsTableHeaderRow');
+            headerRow.innerHTML = `
+                <th class="p-3 w-10 text-center">
+                    <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAllRows(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                </th>
+            `;
+            state.adsColumns.filter(c => c.visible).forEach(col => {
+                const th = document.createElement('th');
+                th.className = 'p-3 font-semibold text-slate-400';
+                th.innerText = col.label;
+                headerRow.appendChild(th);
+            });
+        }
+
+        function renderTableCell(colId, item) {
+            const fmt = v => 'R$ ' + Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+            switch(colId) {
+                case 'name':
+                    const thumb = item.creative_thumbnail ? `<img src="${item.creative_thumbnail}" class="w-8 h-8 rounded-lg object-cover border border-slate-700">` : '';
+                    return `<td class="p-3 text-slate-100 font-semibold flex items-center space-x-2">
+                                ${thumb}
+                                <span class="truncate max-w-xs" title="${item.name}">${item.name}</span>
+                            </td>`;
+                case 'status':
+                    const isActive = (item.status || '').toUpperCase() === 'ACTIVE';
+                    return `<td class="p-3">
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${isActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-700 text-slate-400'}">
+                                    ${isActive ? 'ATIVO' : 'PAUSADO'}
+                                </span>
+                            </td>`;
+                case 'daily_budget':
+                    const b = item.daily_budget ? fmt(item.daily_budget) + '/dia' : 'Usando CBO';
+                    return `<td class="p-3 font-mono text-slate-300">${b}</td>`;
+                case 'spend':
+                    return `<td class="p-3 font-mono text-white font-bold">${fmt(item.spend)}</td>`;
+                case 'roas':
+                    const roas = Number(item.roas || 0);
+                    const roasColor = roas >= 3 ? 'text-emerald-400 font-bold' : (roas >= 1.5 ? 'text-blue-400' : 'text-slate-400');
+                    return `<td class="p-3 font-mono ${roasColor}">${roas.toFixed(2)}x</td>`;
+                case 'cpa':
+                    return `<td class="p-3 font-mono text-amber-400">${fmt(item.cpa)}</td>`;
+                case 'conversions':
+                    return `<td class="p-3 font-mono text-emerald-400 font-bold">${item.conversions || 0}</td>`;
+                case 'clicks':
+                    return `<td class="p-3 font-mono text-slate-300">${(item.clicks || 0).toLocaleString('pt-BR')}</td>`;
+                case 'ctr':
+                    return `<td class="p-3 font-mono text-slate-300">${Number(item.ctr || 0).toFixed(2)}%</td>`;
+                case 'cpc':
+                    return `<td class="p-3 font-mono text-slate-300">${fmt(item.cpc)}</td>`;
+                case 'impressions':
+                    return `<td class="p-3 font-mono text-slate-400">${(item.impressions || 0).toLocaleString('pt-BR')}</td>`;
+                default:
+                    return `<td class="p-3">${item[colId] || '-'}</td>`;
+            }
+        }
+
+        function toggleRowSelection(id, checked) {
+            if (checked) state.selectedRowIds.add(id);
+            else state.selectedRowIds.delete(id);
+            updateBulkActionBar();
+        }
+
+        function toggleSelectAllRows(checked) {
+            const inputs = document.querySelectorAll('#adsTableBody input[type="checkbox"]');
+            inputs.forEach(input => {
+                input.checked = checked;
+            });
+            if (checked) {
+                const ids = Array.from(inputs).map(i => i.getAttribute('onchange').match(/'([^']+)'/)[1]);
+                ids.forEach(id => state.selectedRowIds.add(id));
+            } else {
+                state.selectedRowIds.clear();
+            }
+            updateBulkActionBar();
+            loadAdsManagerData();
+        }
+
+        function updateBulkActionBar() {
+            const bar = document.getElementById('bulkActionBar');
+            const countSpan = document.getElementById('bulkSelectedCount');
+            const cnt = state.selectedRowIds.size;
+            if (cnt > 0) {
+                bar.classList.remove('hidden');
+                countSpan.innerText = `${cnt} item(ns) selecionado(s)`;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        async function bulkAction(action) {
+            const ids = Array.from(state.selectedRowIds);
+            if (ids.length === 0) return;
+
+            if (action === 'delete' && !confirm(`Tem certeza que deseja excluir ${ids.length} item(ns)?`)) return;
+
+            const endpoint = `/api/${state.currentAdsSubTab}/batch`;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids, action })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Ação '${action}' aplicada com sucesso!`, 'success');
+                    state.selectedRowIds.clear();
+                    updateBulkActionBar();
+                    loadAdsManagerData();
+                } else {
+                    showToast(data.error || "Erro na ação em massa", 'error');
+                }
+            } catch (e) {
+                showToast("Erro de comunicação", "error");
+            }
+        }
+
+        async function promptBulkBudget() {
+            const budgetStr = prompt("Informe o novo Orçamento Diário (R$):", "150.00");
+            if (!budgetStr) return;
+            const budget = parseFloat(budgetStr);
+            if (isNaN(budget) || budget <= 0) {
+                showToast("Valor de orçamento inválido", "error");
+                return;
+            }
+
+            const ids = Array.from(state.selectedRowIds);
+            const endpoint = `/api/${state.currentAdsSubTab}/batch`;
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ids, action: 'set_budget', budget })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(`Orçamento atualizado para R$ ${budget.toFixed(2)} em ${ids.length} itens!`, 'success');
+                    loadAdsManagerData();
+                }
+            } catch (e) {
+                showToast("Erro ao atualizar orçamento", "error");
+            }
+        }
+
+        async function syncCampaignsData() {
+            const btn = document.getElementById('syncBtn');
+            const icon = document.getElementById('syncIcon');
+            icon.classList.add('animate-spin');
+
+            try {
+                const res = await fetch('/api/campaigns/sync', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        period: state.period,
+                        start_date: state.startDate,
+                        end_date: state.endDate
+                    })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast(data.message || "Campanhas sincronizadas com a Meta API!", "success");
+                    loadAdsManagerData();
+                    loadDashboardStats();
+                } else {
+                    showToast(data.error || "Erro ao sincronizar com a Meta", "error");
+                }
+            } catch (e) {
+                showToast("Erro ao conectar à API", "error");
+            } finally {
+                icon.classList.remove('animate-spin');
+            }
+        }
+
+        // --- SIMULATE LIVE SALE (Ka-ching Trigger!) ---
+        async function simulateSale() {
+            try {
+                const res = await fetch('/api/demo/simulate_sale', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 197.00, customer_name: 'Comprador VIP UtmFlow' })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    playKachingSound();
+                    showToast(`Nova Venda Aprovada! R$ ${data.amount.toFixed(2)} - ${data.customer_name}`, 'success');
+                    loadDashboardStats();
+                }
+            } catch (e) {
+                console.error("Simulate sale error", e);
+            }
+        }
+
+        // --- PERIODIC LIVE SALE CHECKER ---
+        async function checkLiveSales() {
+            try {
+                const res = await fetch(`/api/live/check?since=${encodeURIComponent(state.lastSaleCheckedTime)}`);
+                const data = await res.json();
+                if (data.success && data.sales && data.sales.length > 0) {
+                    data.sales.forEach(s => {
+                        playKachingSound();
+                        showToast(`💰 Venda Confirmada: R$ ${Number(s.amount).toFixed(2)} (${s.customer_name})`, 'success');
+                    });
+                    state.lastSaleCheckedTime = data.server_time;
+                    loadDashboardStats();
+                }
+            } catch (e) {}
+        }
+        setInterval(checkLiveSales, 6000);
+
+        // --- COLUMN CUSTOMIZER ---
+        function openColumnCustomizer() {
+            const container = document.getElementById('columnsListContainer');
+            container.innerHTML = '';
+            state.adsColumns.forEach((c, idx) => {
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-2 rounded-lg bg-[#1F2937] text-xs';
+                div.innerHTML = `
+                    <label class="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" id="col_check_${c.id}" ${c.visible ? 'checked' : ''} class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        <span class="text-slate-200 font-semibold">${c.label}</span>
+                    </label>
+                    <div class="flex items-center space-x-1">
+                        <button onclick="moveColumn(${idx}, -1)" class="p-1 hover:text-blue-400 text-slate-400" title="Subir">▲</button>
+                        <button onclick="moveColumn(${idx}, 1)" class="p-1 hover:text-blue-400 text-slate-400" title="Descer">▼</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+            openModal('modalColumns');
+        }
+
+        function moveColumn(idx, dir) {
+            const targetIdx = idx + dir;
+            if (targetIdx < 0 || targetIdx >= state.adsColumns.length) return;
+            const temp = state.adsColumns[idx];
+            state.adsColumns[idx] = state.adsColumns[targetIdx];
+            state.adsColumns[targetIdx] = temp;
+            openColumnCustomizer();
+        }
+
+        async function saveColumnPreferences() {
+            state.adsColumns.forEach(c => {
+                const chk = document.getElementById(`col_check_${c.id}`);
+                if (chk) c.visible = chk.checked;
+            });
+            closeModal('modalColumns');
+            renderAdsTable([]);
+            loadAdsManagerData();
+            
+            try {
+                await fetch('/api/preferences', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ columns: state.adsColumns })
+                });
+                showToast("Preferências de colunas salvas!", "success");
+            } catch (e) {}
+        }
+
+        // --- WEBHOOKS & PIXEL CODE ---
+        function copyWebhook(platform) {
+            const input = document.getElementById(`wh_${platform}`);
+            navigator.clipboard.writeText(input.value);
+            const txt = document.getElementById(`copy_${platform}_txt`);
+            txt.innerText = 'Copiado!';
+            setTimeout(() => txt.innerText = 'Copiar', 2000);
+            showToast(`Webhook ${platform.toUpperCase()} copiado com sucesso!`, 'success');
+        }
+
+        function copyPixelScript() {
+            const code = document.getElementById('pixelScriptCode').innerText;
+            navigator.clipboard.writeText(code);
+            const txt = document.getElementById('copy_script_txt');
+            txt.innerText = 'Copiado!';
+            setTimeout(() => txt.innerText = 'Copiar Script', 2000);
+            showToast("Script copiado! Cole antes de </head> nas suas páginas.", "success");
+        }
+
+        function updateWebhookUrls() {
+            const origin = window.location.origin;
+            document.getElementById('wh_kiwify').value = `${origin}/api/webhook/kiwify`;
+            document.getElementById('wh_hotmart').value = `${origin}/api/webhook/hotmart`;
+            document.getElementById('wh_greenn').value = `${origin}/api/webhook/greenn`;
+            document.getElementById('wh_cakto').value = `${origin}/api/webhook/cakto`;
+            document.getElementById('wh_wiapy').value = `${origin}/api/webhook/wiapy`;
+            document.getElementById('wh_generic').value = `${origin}/api/webhook/generic`;
+            document.getElementById('pixelScriptCode').innerText = `<!-- UtmFlow Pixel & Checkout Link Decorator v2.0 -->\n<script src="${origin}/utmflow.js" defer><\/script>`;
+        }
+
+        // --- META INTEGRATION & OAUTH ---
+        async function loadMetaConfig() {
+            try {
+                const res = await fetch('/api/integrations/meta/config');
+                const data = await res.json();
+                if (data.success && data.config) {
+                    document.getElementById('metaAppId').value = data.config.app_id || '';
+                    document.getElementById('metaRedirectUri').value = `${window.location.origin}/api/integrations/meta/callback`;
+                }
+            } catch (e) {}
+        }
+
+        async function saveMetaOAuthConfig() {
+            const appId = document.getElementById('metaAppId').value.trim();
+            const appSecret = document.getElementById('metaAppSecret').value.trim();
+            const redirectUri = `${window.location.origin}/api/integrations/meta/callback`;
+
+            try {
+                const res = await fetch('/api/integrations/meta/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ app_id: appId, app_secret: appSecret, redirect_uri: redirectUri })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("Configurações do App Meta salvas!", "success");
+                }
+            } catch (e) {
+                showToast("Erro ao salvar configurações", "error");
+            }
+        }
+
+        async function startMetaOAuth() {
+            try {
+                const res = await fetch('/api/integrations/meta/oauth/start');
+                const data = await res.json();
+                if (data.success && data.oauth_url) {
+                    window.location.href = data.oauth_url;
+                } else {
+                    showToast(data.error || "Configure o App ID e Salve antes de conectar", "error");
+                }
+            } catch (e) {
+                showToast("Erro ao iniciar OAuth", "error");
+            }
+        }
+
+        async function loadAccounts() {
+            try {
+                const res = await fetch('/api/integrations/meta/accounts');
+                const data = await res.json();
+                if (!data.success) return;
+
+                const accounts = data.accounts || [];
+                const selector = document.getElementById('accountSelector');
+                selector.innerHTML = '<option value="all">Todas as Contas Selecionadas</option>';
+
+                const tbody = document.getElementById('connectedAccountsTableBody');
+                tbody.innerHTML = '';
+
+                accounts.forEach(acc => {
+                    const opt = document.createElement('option');
+                    opt.value = acc.id;
+                    opt.innerText = acc.name;
+                    selector.appendChild(opt);
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-800/40 transition';
+                    tr.innerHTML = `
+                        <td class="p-3 text-center">
+                            <input type="checkbox" ${acc.is_selected ? 'checked' : ''} onchange="toggleAccountSelected('${acc.id}', this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-600 focus:ring-0">
+                        </td>
+                        <td class="p-3 font-semibold text-slate-200">${acc.name}</td>
+                        <td class="p-3 font-mono text-slate-400">${acc.id}</td>
+                        <td class="p-3 text-slate-300">${acc.currency || 'BRL'} (${acc.timezone_name || 'SP'})</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                ${acc.connection_type === 'system_user_permanent' ? 'BM PERMANENTE' : 'OAUTH 60D'}
+                            </span>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {}
+        }
+
+        async function toggleAccountSelected(accId, checked) {
+            try {
+                await fetch('/api/integrations/meta/accounts/toggle', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ account_id: accId, is_selected: checked })
+                });
+                loadDashboardStats();
+            } catch (e) {}
+        }
+
+        async function toggleAllAccounts(select) {
+            try {
+                await fetch('/api/integrations/meta/accounts/toggle_all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ select_all: select })
+                });
+                loadAccounts();
+                loadDashboardStats();
+                showToast(select ? "Todas as contas marcadas!" : "Todas as contas desmarcadas", "info");
+            } catch (e) {}
+        }
+
+        async function disconnectMeta() {
+            if (!confirm("Deseja realmente desconectar da Meta e revogar as permissões?")) return;
+            try {
+                const res = await fetch('/api/integrations/meta/disconnect', { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("Conta Meta desconectada e permissões revogadas", "success");
+                    loadAccounts();
+                    loadDashboardStats();
+                }
+            } catch (e) {
+                showToast("Erro ao desconectar", "error");
+            }
+        }
+
+        // --- MANUAL TOKEN MODAL ---
+        function openManualTokenModal() { openModal('modalManualToken'); }
+        async function submitManualToken() {
+            const token = document.getElementById('manualTokenValue').value.trim();
+            const name = document.getElementById('manualTokenName').value.trim();
+            if (!token) {
+                showToast("Cole o token permanente da BM", "error");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/integrations/meta/manual_token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ access_token: token, name })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeModal('modalManualToken');
+                    showToast(data.message || "Token Permanente Conectado com Sucesso!", "success");
+                    loadAccounts();
+                    loadDashboardStats();
+                } else {
+                    showToast(data.error || "Token inválido", "error");
+                }
+            } catch (e) {
+                showToast("Erro ao validar token", "error");
+            }
+        }
+
+        // --- PIXELS CAPI ---
+        function openAddPixelModal() { openModal('modalAddPixel'); }
+        async function loadPixels() {
+            try {
+                const res = await fetch('/api/pixels');
+                const data = await res.json();
+                const tbody = document.getElementById('pixelsTableBody');
+                tbody.innerHTML = '';
+                (data.pixels || []).forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-800/40 transition';
+                    tr.innerHTML = `
+                        <td class="p-3 font-semibold text-slate-200">${p.name}</td>
+                        <td class="p-3 font-mono text-slate-300">${p.pixel_id}</td>
+                        <td class="p-3 font-mono text-slate-400">${p.test_event_code || 'N/A'}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">ATIVO</span>
+                        </td>
+                        <td class="p-3 text-right space-x-2">
+                            <button onclick="testCapi('${p.id}')" class="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 rounded text-xs font-semibold transition">Disparar Teste CAPI</button>
+                            <button onclick="deletePixel('${p.id}')" class="text-rose-400 hover:text-rose-300">Excluir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {}
+        }
+
+        async function submitNewPixel() {
+            const name = document.getElementById('pixelName').value.trim();
+            const pixel_id = document.getElementById('pixelMetaId').value.trim();
+            const access_token = document.getElementById('pixelToken').value.trim();
+            const test_event_code = document.getElementById('pixelTestCode').value.trim();
+
+            if (!pixel_id || !access_token) {
+                showToast("Preencha o Pixel ID e o Token CAPI", "error");
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/pixels', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, pixel_id, access_token, test_event_code })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeModal('modalAddPixel');
+                    showToast("Pixel CAPI cadastrado!", "success");
+                    loadPixels();
+                }
+            } catch (e) {}
+        }
+
+        async function testCapi(pixelId) {
+            const logBox = document.getElementById('capiLogViewer');
+            logBox.innerText = "Enviando evento de compra Purchase server-side para a Meta...";
+            try {
+                const res = await fetch('/api/pixels/test_capi', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: pixelId })
+                });
+                const data = await res.json();
+                logBox.innerText = JSON.stringify(data, null, 2);
+                showToast("Evento CAPI enviado à Meta! Verifique os logs.", "success");
+            } catch (e) {
+                logBox.innerText = "Erro ao disparar CAPI: " + e;
+            }
+        }
+
+        async function deletePixel(id) {
+            if (!confirm("Excluir este Pixel CAPI?")) return;
+            try {
+                await fetch(`/api/pixels?id=${id}`, { method: 'DELETE' });
+                showToast("Pixel removido", "info");
+                loadPixels();
+            } catch (e) {}
+        }
+
+        // --- AUTOMATED RULES ---
+        function openAddRuleModal() { openModal('modalAddRule'); }
+        async function loadRules() {
+            try {
+                const res = await fetch('/api/rules');
+                const data = await res.json();
+                const tbody = document.getElementById('rulesTableBody');
+                tbody.innerHTML = '';
+                (data.rules || []).forEach(r => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-800/40 transition';
+                    tr.innerHTML = `
+                        <td class="p-3 font-semibold text-slate-200">${r.name}</td>
+                        <td class="p-3 font-mono text-purple-400 uppercase">${r.rule_type}</td>
+                        <td class="p-3 text-slate-300">Gasto > R$ ${r.threshold_value} e Vendas = 0</td>
+                        <td class="p-3 text-slate-300">${r.action_type === 'pause_campaign' ? 'Pausar Campanha' : `+${r.action_value}% Orçamento`}</td>
+                        <td class="p-3">
+                            <input type="checkbox" ${r.is_active ? 'checked' : ''} onchange="toggleRule('${r.id}', this.checked)" class="rounded bg-slate-800 border-slate-700 text-purple-600 focus:ring-0">
+                        </td>
+                        <td class="p-3 text-right">
+                            <button onclick="deleteRule('${r.id}')" class="text-rose-400 hover:text-rose-300">Excluir</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {}
+        }
+
+        async function toggleRule(id, active) {
+            await fetch('/api/rules/toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id, is_active: active })
+            });
+            showToast("Status da regra atualizado", "info");
+        }
+
+        async function submitNewRule() {
+            const name = document.getElementById('ruleName').value.trim();
+            const rule_type = document.getElementById('ruleType').value;
+            const threshold_value = document.getElementById('ruleThreshold').value;
+            const action_type = document.getElementById('ruleAction').value;
+            const action_value = document.getElementById('ruleActionValue').value;
+
+            try {
+                const res = await fetch('/api/rules', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, rule_type, threshold_value, action_type, action_value })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    closeModal('modalAddRule');
+                    showToast("Nova regra criada com sucesso!", "success");
+                    loadRules();
+                }
+            } catch (e) {}
+        }
+
+        async function deleteRule(id) {
+            if (!confirm("Excluir regra?")) return;
+            await fetch(`/api/rules?id=${id}`, { method: 'DELETE' });
+            showToast("Regra removida", "info");
+            loadRules();
+        }
+
+        async function loadRuleLogs() {
+            try {
+                const res = await fetch('/api/rules/logs');
+                const data = await res.json();
+                const tbody = document.getElementById('ruleLogsBody');
+                tbody.innerHTML = '';
+                (data.logs || []).forEach(l => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-800/40 transition text-slate-300';
+                    tr.innerHTML = `
+                        <td class="p-3">${l.created_at.substring(0, 19).replace('T', ' ')}</td>
+                        <td class="p-3 font-semibold text-white">${l.rule_name}</td>
+                        <td class="p-3 text-purple-400">${l.action_taken}</td>
+                        <td class="p-3 text-slate-400">${l.details}</td>
+                        <td class="p-3"><span class="text-emerald-400 font-bold">${l.status}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (e) {}
+        }
+
+        // --- FINANCIAL SETTINGS ---
+        async function loadFinancialSettings() {
+            try {
+                const res = await fetch('/api/financial/settings');
+                const data = await res.json();
+                if (data.success && data.settings) {
+                    const s = data.settings;
+                    document.getElementById('finTaxRate').value = s.tax_rate || 6.0;
+                    document.getElementById('finGatewayRate').value = s.gateway_rate || 8.9;
+                    document.getElementById('finGatewayFixed').value = s.gateway_fixed_fee || 2.49;
+                    document.getElementById('finProductCost').value = s.product_cost_rate || 15.0;
+                }
+            } catch (e) {}
+        }
+
+        async function saveFinancialSettings() {
+            const tax_rate = document.getElementById('finTaxRate').value;
+            const gateway_rate = document.getElementById('finGatewayRate').value;
+            const gateway_fixed_fee = document.getElementById('finGatewayFixed').value;
+            const product_cost_rate = document.getElementById('finProductCost').value;
+
+            try {
+                const res = await fetch('/api/financial/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ tax_rate, gateway_rate, gateway_fixed_fee, product_cost_rate })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    showToast("Parâmetros financeiros atualizados!", "success");
+                    loadDashboardStats();
+                }
+            } catch (e) {
+                showToast("Erro ao salvar taxas", "error");
+            }
+        }
+
+        // --- MODAL UTILITIES ---
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+        // --- DRAG & DROP DASHBOARD REORDERING & PERSISTENCE ---
+        let dragSource = null;
+        function initDragAndDrop() {
+            const grid = document.getElementById('metricsGrid');
+            const cards = grid.querySelectorAll('.metric-card');
+
+            cards.forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    dragSource = card;
+                    e.dataTransfer.effectAllowed = 'move';
+                    card.classList.add('drag-ghost');
+                });
+                card.addEventListener('dragend', () => {
+                    card.classList.remove('drag-ghost');
+                });
+                card.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+                card.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    if (dragSource && dragSource !== card) {
+                        const allCards = Array.from(grid.querySelectorAll('.metric-card'));
+                        const srcIdx = allCards.indexOf(dragSource);
+                        const targetIdx = allCards.indexOf(card);
+
+                        if (srcIdx < targetIdx) {
+                            grid.insertBefore(dragSource, card.nextSibling);
+                        } else {
+                            grid.insertBefore(dragSource, card);
+                        }
+                        saveDashboardLayout();
+                    }
+                });
+            });
+        }
+
+        async function saveDashboardLayout() {
+            const grid = document.getElementById('metricsGrid');
+            const order = Array.from(grid.querySelectorAll('.metric-card')).map(c => c.getAttribute('data-card-id'));
+            try {
+                await fetch('/api/dashboard/layout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ layout: order })
+                });
+            } catch (e) {}
+        }
+
+        async function loadDashboardLayout() {
+            try {
+                const res = await fetch('/api/dashboard/layout');
+                const data = await res.json();
+                if (data.success && data.layout && Array.isArray(data.layout)) {
+                    const grid = document.getElementById('metricsGrid');
+                    data.layout.forEach(id => {
+                        const card = grid.querySelector(`[data-card-id="${id}"]`);
+                        if (card) grid.appendChild(card);
+                    });
+                }
+            } catch (e) {}
+        }
+
+        function resetDashboardLayout() {
+            showToast("Layout redefinido para a ordem padrão", "info");
+        }
+
+        // --- INIT ---
+        window.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+            updateWebhookUrls();
+            await loadDashboardLayout();
+            initDragAndDrop();
+            loadAccounts();
+            loadDashboardStats();
+            loadFinancialSettings();
+        });
+    </script>
+</body>
+</html>
