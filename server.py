@@ -12,7 +12,7 @@ import urllib.parse
 import urllib.error
 import hashlib
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import threading
 import os
 import sys
@@ -310,7 +310,7 @@ def init_db():
     # Seed Default Financial Settings if empty
     cursor.execute("SELECT id FROM financial_settings WHERE id = 'default'")
     if not cursor.fetchone():
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
         cursor.execute("""
             INSERT INTO financial_settings (id, tax_rate, gateway_rate, gateway_fixed_fee, product_cost_rate, updated_at)
             VALUES ('default', 6.0, 8.9, 2.49, 15.0, ?)
@@ -327,7 +327,7 @@ def init_db():
 
 def seed_sample_data(cursor):
     """Populates realistic demo campaigns, ad sets, ads and recent orders."""
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     act_id = "act_1092837482"
     conn_id = "conn_demo_default"
 
@@ -398,7 +398,7 @@ def seed_sample_data(cursor):
 
     for i, b in enumerate(buyers):
         ord_id = f"ord_{uuid.uuid4().hex[:10]}"
-        ord_time = (now - timedelta(hours=b[9])).isoformat()
+        ord_time = (now - timedelta(hours=b[10])).isoformat()
         cursor.execute("""
             INSERT OR REPLACE INTO orders (
                 id, external_id, platform, status, amount, currency, customer_name, customer_email,
@@ -406,7 +406,7 @@ def seed_sample_data(cursor):
                 utm_content, utm_term, src, sck, fbc, fbp, product_name, product_id, created_at, paid_at
             ) VALUES (?, ?, ?, ?, ?, 'BRL', ?, ?, ?, '189.40.12.55', 'Mozilla/5.0 UtmFlowBrowser', ?, ?, ?, ?, '', ?, '', 'fb.1.17112345678.98765', 'fb.1.17112345678.12345', 'Método UtmFlow Escala 10X', 'prod_uf_01', ?, ?)
         """, (
-            ord_id, f"ext_{100000+i}", b[8], b[4], b[3], b[0], b[1], b[2],
+            ord_id, f"ext_{100000+i}", b[9], b[4], b[3], b[0], b[1], b[2],
             b[5], b[6], b[7], b[8], b[5], ord_time, ord_time if b[4] == 'paid' else None
         ))
 
@@ -554,7 +554,7 @@ def automated_rules_worker():
 
             cursor.execute("SELECT * FROM automated_rules WHERE is_active = 1")
             rules = cursor.fetchall()
-            now_iso = datetime.utcnow().isoformat()
+            now_iso = datetime.now(timezone.utc).isoformat()
 
             for rule in rules:
                 rule_id = rule["id"]
@@ -691,7 +691,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     """)
                 rows = [dict(r) for r in cursor.fetchall()]
                 conn.close()
-                self.send_json({"success": True, "sales": rows, "server_time": datetime.utcnow().isoformat()})
+                self.send_json({"success": True, "sales": rows, "server_time": datetime.now(timezone.utc).isoformat()})
                 return
 
             elif path == "/api/dashboard/stats":
@@ -699,7 +699,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 start_date = query.get('start_date', [None])[0]
                 end_date = query.get('end_date', [None])[0]
 
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 date_filter_sql = ""
                 params = []
 
@@ -973,7 +973,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     return
 
                 state_token = uuid.uuid4().hex
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
                 cursor.execute("INSERT INTO oauth_states (state, created_at, is_used) VALUES (?, ?, 0)", (state_token, now_iso))
                 conn.commit()
                 conn.close()
@@ -1044,13 +1044,13 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     long_token = long_resp.get("access_token", short_token)
                     expires_in = long_resp.get("expires_in", 5184000)
 
-                    expires_at = (datetime.utcnow() + timedelta(seconds=expires_in)).isoformat()
+                    expires_at = (datetime.now(timezone.utc) + timedelta(seconds=expires_in)).isoformat()
                     conn_id = f"meta_oauth_{uuid.uuid4().hex[:8]}"
 
                     cursor.execute("""
                         INSERT INTO facebook_connections (id, connection_type, name, access_token, token_type, expires_at, created_at, status)
                         VALUES (?, 'oauth_60d', 'Conexão Meta 1-Clique (60 Dias)', ?, 'BEARER', ?, ?, 'active')
-                    """, (conn_id, long_token, expires_at, datetime.utcnow().isoformat()))
+                    """, (conn_id, long_token, expires_at, datetime.now(timezone.utc).isoformat()))
 
                     accounts_data = fetch_all_meta_pages(
                         "https://graph.facebook.com/v19.0/me/adaccounts",
@@ -1067,7 +1067,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                         cursor.execute("""
                             INSERT OR REPLACE INTO facebook_ad_accounts (id, connection_id, name, account_status, currency, timezone_name, is_selected, last_synced_at)
                             VALUES (?, ?, ?, ?, ?, ?, 1, ?)
-                        """, (acc_id, conn_id, acc_name, status, curr, tz, datetime.utcnow().isoformat()))
+                        """, (acc_id, conn_id, acc_name, status, curr, tz, datetime.now(timezone.utc).isoformat()))
 
                     conn.commit()
                     conn.close()
@@ -1152,7 +1152,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
 
             if path == "/api/track":
                 ev_id = str(uuid.uuid4())
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
                 cursor.execute("""
                     INSERT INTO tracking_events (
                         id, event_name, event_id, url, referrer, utm_source, utm_medium,
@@ -1187,7 +1187,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 order_data = self.normalize_webhook_payload(platform, body)
 
                 ord_id = f"ord_{uuid.uuid4().hex[:10]}"
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
 
                 cursor.execute("""
                     INSERT OR REPLACE INTO orders (
@@ -1252,7 +1252,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
 
             elif path == "/api/demo/simulate_sale":
                 ord_id = f"ord_{uuid.uuid4().hex[:10]}"
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
                 amount = float(body.get('amount', 197.00))
                 customer_name = body.get('customer_name', 'Comprador Teste VIP')
                 platform = body.get('platform', 'kiwify')
@@ -1276,7 +1276,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 app_id = body.get('app_id', '').strip()
                 app_secret = body.get('app_secret', '').strip()
                 redirect_uri = body.get('redirect_uri', '').strip()
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
 
                 cursor.execute("""
                     INSERT OR REPLACE INTO meta_oauth_config (id, app_id, app_secret, redirect_uri, updated_at)
@@ -1303,7 +1303,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     )
 
                     conn_id = f"meta_perm_{uuid.uuid4().hex[:8]}"
-                    now_iso = datetime.utcnow().isoformat()
+                    now_iso = datetime.now(timezone.utc).isoformat()
 
                     cursor.execute("""
                         INSERT INTO facebook_connections (id, connection_type, name, access_token, token_type, expires_at, created_at, status)
@@ -1383,7 +1383,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 token = conn_row["access_token"]
                 cursor.execute("SELECT id FROM facebook_ad_accounts WHERE is_selected = 1")
                 accounts = cursor.fetchall()
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
 
                 total_synced = 0
                 for acc in accounts:
@@ -1470,7 +1470,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     return
 
                 new_camp_id = f"camp_{uuid.uuid4().hex[:8]}"
-                now_iso = datetime.utcnow().isoformat()
+                now_iso = datetime.now(timezone.utc).isoformat()
                 cursor.execute("""
                     INSERT INTO campaigns (id, account_id, name, status, effective_status, objective, daily_budget, updated_at)
                     VALUES (?, ?, ?, 'PAUSED', 'PAUSED', ?, ?, ?)
@@ -1550,7 +1550,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 cursor.execute("""
                     INSERT INTO meta_pixels (id, name, pixel_id, access_token, test_event_code, is_active, created_at)
                     VALUES (?, ?, ?, ?, ?, 1, ?)
-                """, (new_id, name, pixel_id, access_token, test_event_code, datetime.utcnow().isoformat()))
+                """, (new_id, name, pixel_id, access_token, test_event_code, datetime.now(timezone.utc).isoformat()))
                 conn.commit()
                 conn.close()
                 self.send_json({"success": True, "id": new_id})
@@ -1596,7 +1596,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     body.get('action_type', 'pause_campaign'),
                     float(body.get('action_value', 0)),
                     body.get('target_account_id', 'all'),
-                    datetime.utcnow().isoformat()
+                    datetime.now(timezone.utc).isoformat()
                 ))
                 conn.commit()
                 conn.close()
@@ -1618,7 +1618,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 cursor.execute("""
                     INSERT OR REPLACE INTO user_preferences (id, columns_config, theme, updated_at)
                     VALUES ('default', ?, ?, ?)
-                """, (cols, theme, datetime.utcnow().isoformat()))
+                """, (cols, theme, datetime.now(timezone.utc).isoformat()))
                 conn.commit()
                 conn.close()
                 self.send_json({"success": True})
@@ -1629,7 +1629,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                 cursor.execute("""
                     INSERT OR REPLACE INTO custom_dashboards (id, layout_json, updated_at)
                     VALUES ('default', ?, ?)
-                """, (layout_json, datetime.utcnow().isoformat()))
+                """, (layout_json, datetime.now(timezone.utc).isoformat()))
                 conn.commit()
                 conn.close()
                 self.send_json({"success": True})
@@ -1645,7 +1645,7 @@ class UtmFlowHandler(http.server.BaseHTTPRequestHandler):
                     float(body.get('gateway_rate', 8.9)),
                     float(body.get('gateway_fixed_fee', 2.49)),
                     float(body.get('product_cost_rate', 15.0)),
-                    datetime.utcnow().isoformat()
+                    datetime.now(timezone.utc).isoformat()
                 ))
                 conn.commit()
                 conn.close()
